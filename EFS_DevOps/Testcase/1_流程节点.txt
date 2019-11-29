@@ -1,0 +1,83 @@
+*** Settings ***
+Library           Selenium2Library
+Library           CustomLibrary
+Resource          2_模块.txt
+Resource          3_方法.txt
+Resource          4_文件参数化读取.txt
+Resource          5_全局参数化设置.txt
+Resource          6_数据库操作.txt
+
+*** Keywords ***
+新增菜单
+    log    开始新城申请啦
+    Button容错    新增权限
+    文本输入框    功能全称    ${功能全称}
+    根据文本选择下拉框    接口类型    ${接口类型}
+    文本输入框    外链URL    ${外链URL}
+    根据文本选择下拉框    上级菜单    ${上级菜单}
+    文本输入框    功能简称    ${功能简称}
+    文本输入框    功能图标    ${功能图标}
+    文本输入框    功能代码    ${功能代码}
+    根据文本选择下拉框    系统    ${系统}
+    单选按钮    是否启用    启用
+    Click Element    //div[3]//div[contains(.,"保存")]
+    Button容错    知道了
+
+新增XXLJOB
+    Open Browser    ${XXLJOB_环境}    chrome
+    Maximize Browser Window
+    Input Text    //*[@id="loginForm"]/div/div[1]/input    ${XXLJOB_用户}
+    Input Text    //*[@id="loginForm"]/div/div[2]/input    ${XXLJOB_密码}
+    Click Element    //*[@id="loginForm"]/div/div[3]/div[2]/button
+    Wait Until Element Is Visible    //html/body/div[2]/aside/section/ul/li[2]/a/span    20
+    Click Element    //html/body/div[2]/aside/section/ul/li[2]/a/span
+    等待
+    Button容错    新增任务
+    等待
+    Select From List By Label    //label[contains(.,"执行器")]/following-sibling::div//select    ${执行器}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[1]/div[2]/input    ${任务描述}
+    等待
+    Select From List By Label    //label[contains(.,"路由策略")]/following-sibling::div//select    ${路由策略}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[2]/div[2]/input    ${Cron}
+    等待
+    Select From List By Label    //label[contains(.,"运行模式")]/following-sibling::div//select    ${运行模式}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[3]/div[2]/input    ${JobHandler}
+    等待
+    Select From List By Label    //label[contains(.,"阻塞处理策略")]/following-sibling::div//select    ${阻塞处理策略}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[6]/div[1]/input    ${负责人}
+    等待
+    Button容错    保存
+
+重启DAOCLOUD
+    Open Browser    ${DAOCLOUD_环境}    chrome
+    Maximize Browser Window
+    Input Text    //*[@id="login"]/div[2]/div[2]/div/div/div[1]/div/div/div/div[1]/input    ${DAOCLOUD_用户}
+    Input Text    //*[@id="login"]/div[2]/div[2]/div/div/div[2]/label/div/div/div/div[1]/input    ${DAOCLOUD_密码}
+    Click Element    //*[@id="login"]/div[2]/div[2]/div/div/button
+    等待
+    Wait Until Element Is Visible    //*[@id="app"]/div[2]/menu/div[1]/div/section[2]/menu/span/span[2]    20
+    Click Element    //*[@id="app"]/div[2]/menu/div[1]/div/section[2]/menu/span/span[2]
+    等待
+    Button容错    新增任务
+    等待
+    Select From List By Label    //label[contains(.,"执行器")]/following-sibling::div//select    ${执行器}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[1]/div[2]/input    ${任务描述}
+    等待
+    Select From List By Label    //label[contains(.,"路由策略")]/following-sibling::div//select    ${路由策略}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[2]/div[2]/input    ${Cron}
+    等待
+    Select From List By Label    //label[contains(.,"运行模式")]/following-sibling::div//select    ${运行模式}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[3]/div[2]/input    ${JobHandler}
+    等待
+    Select From List By Label    //label[contains(.,"阻塞处理策略")]/following-sibling::div//select    ${阻塞处理策略}
+    等待
+    Input Text    //*[@id="addModal"]/div/div/div[2]/form/div[6]/div[1]/input    ${负责人}
+    等待
+    Button容错    保存

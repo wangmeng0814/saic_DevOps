@@ -1,0 +1,72 @@
+*** Settings ***
+Library           Selenium2Library
+Resource          3_方法.txt
+Library           CustomLibrary
+Library           OperatingSystem
+Library           Collections
+Resource          4_文件参数化读取.txt
+Library           Screenshot
+Resource          5_全局参数化设置.txt
+Resource          6_数据库操作.txt
+Resource          7_断言.txt
+Library           RequestsLibrary
+
+*** Keywords ***
+打开浏览器
+    [Timeout]    16 hours 39 minutes
+    log    打开浏览器了
+    Open Browser    ${EFS_环境}    chrome
+    等待
+    页面容错计数器
+    Maximize Browser Window
+
+登录
+    [Arguments]    ${timeout}=60
+    [Timeout]
+    log    登录
+    Selenium2Library.Input Text    //input[@placeholder="登录账号"]    ${EFS_用户}
+    Input Password    //input[@placeholder="登录密码"]    ${EFS_密码}
+    Click Button    //app-login//button[@class="btn btn-primary"]
+    等待
+    ${status1}    ERROR文本断言    //div[contains(.,"用户名或密码错误")]
+    Run Keyword If    ${status1}==False    Run Keywords    DB_changePassword    ${用户名}
+    ...    AND    登录_当前用户
+    ${status2}    ERROR文本断言    //div[contains(.,"账号已锁定")]
+    Run Keyword If    ${status2}==False    Run Keywords    DB_UNLOCK    ${用户名}
+    ...    AND    登录_当前用户
+    : FOR    ${i}    IN RANGE    ${timeout}
+    \    ${c_url}    Get Location
+    \    sleep    1
+    \    Run Keyword If    "${c_url}"!="https://efssit.saic-finance.com/#/"    Exit For Loop
+    等待
+    页面容错计数器
+    ${status}=    Run Keyword And Return Status    Element Should Be Visible    //div[@class="modal-content"]//button[@class="close"]
+    Run Keyword If    ${status}==True    Click Element    //div[@class="modal-content"]//button[@class="close"]
+    sleep    1
+
+登录_当前用户
+    [Documentation]    使用申请当前用户登录，并打开申请工作空间
+    [Timeout]
+    关闭浏览器
+    打开浏览器
+    ${username}    DB_getApplyProcessorName    ${ApplyId}
+    Set test Variable    ${用户名}    ${username}
+    登录
+    等待
+
+选择主菜单
+    [Arguments]    ${menual_1}
+    log    开始选择主菜单啦啦啦！！！
+    Comment    ${m1_style}=    Get Element Attribute    //a[@title="${menual_1}"]/following-sibling::ul    style
+    ${status}=    Run Keyword And Return Status    Element Should Be Visible    //a[@title="${menual_1}"]
+    Run Keyword If    ${status}==True    Click Element    //a[@title="${menual_1}"]
+    等待
+    页面容错计数器
+    [Teardown]
+
+选择子菜单
+    [Arguments]    ${menua_2}
+    log    开始选择子菜单啦啦啦！！！！
+    Click Element    //aside[@id="left-panel"]//span[contains(.,"${menua_2}")]
+    等待
+    页面容错计数器

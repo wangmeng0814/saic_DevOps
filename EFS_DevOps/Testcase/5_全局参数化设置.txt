@@ -1,0 +1,81 @@
+*** Settings ***
+Library           DatabaseLibrary
+Library           ExcelLibrary
+Library           DateTime
+Resource          4_文件参数化读取.txt
+Library           CustomLibrary
+Resource          3_方法.txt
+Resource          6_数据库操作.txt
+
+*** Keywords ***
+环境用户名密码管理
+    [Arguments]    ${INDEX}=1
+    log    设置初始化全局变量
+    ${test}    E_getDefaultDetails
+    ${EFS_URL}    EXCEL参数化设置    ${test[0]}    ${INDEX}
+    Set test Variable    ${EFS_环境}    ${EFS_URL}
+    ${EFS_USER}    EXCEL参数化设置    ${test[1]}    ${INDEX}
+    Set test Variable    ${EFS_用户}    ${EFS_USER}
+    ${EFS_PASSWORD}    EXCEL参数化设置    ${test[2]}    ${INDEX}
+    Set test Variable    ${EFS_密码}    ${EFS_PASSWORD}
+    ${Apollo_URL}    EXCEL参数化设置    ${test[3]}    ${INDEX}
+    Set test Variable    ${Apollo_环境}    ${Apollo_URL}
+    ${Apollo_USER}    EXCEL参数化设置    ${test[4]}    ${INDEX}
+    Set test Variable    ${Apollo_用户}    ${Apollo_USER}
+    ${Apollo_PASSWORD}    EXCEL参数化设置    ${test[5]}    ${INDEX}
+    Set test Variable    ${Apollo_密码}    ${Apollo_PASSWORD}
+    ${XXLJOB_URL}    EXCEL参数化设置    ${test[6]}    ${INDEX}
+    Set test Variable    ${XXLJOB_环境}    ${XXLJOB_URL}
+    ${XXLJOB_USER}    EXCEL参数化设置    ${test[7]}    ${INDEX}
+    Set test Variable    ${XXLJOB_用户}    ${XXLJOB_USER}
+    ${XXLJOB_PASSWORD}    EXCEL参数化设置    ${test[8]}    ${INDEX}
+    Set test Variable    ${XXLJOB_密码}    ${XXLJOB_PASSWORD}
+    ${DAOCLOUD_URL}    EXCEL参数化设置    ${test[9]}    ${INDEX}
+    Set test Variable    ${DAOCLOUD_环境}    ${DAOCLOUD_URL}
+    ${DAOCLOUD_USER}    EXCEL参数化设置    ${test[10]}    ${INDEX}
+    Set test Variable    ${DAOCLOUD_用户}    ${DAOCLOUD_USER}
+    ${DAOCLOUD_PASSWORD}    EXCEL参数化设置    ${test[11]}    ${INDEX}
+    Set test Variable    ${DAOCLOUD_密码}    ${DAOCLOUD_PASSWORD}
+
+新增菜单管理
+    [Documentation]    姓名 证件类型 证件号码
+    log    设置新增贷款申请全局变量
+    ${test}    E_getMenuDetails
+    ${name}    EXCEL参数化设置    ${test[0]}    ${INDEX}
+    Set test Variable    ${功能全称}    ${name}
+    ${type}    EXCEL参数化设置    ${test[1]}    ${INDEX}
+    Set test Variable    ${接口类型}    ${type}
+    ${URL}    EXCEL参数化设置    ${test[2]}    ${INDEX}
+    Set test Variable    ${外链URL}    ${URL}
+    ${Hmenu}    EXCEL参数化设置    ${test[3]}    ${INDEX}
+    Set test Variable    ${上级菜单}    ${Hmenu}
+    ${Sname}    EXCEL参数化设置    ${test[4]}    ${INDEX}
+    Set test Variable    ${功能简称}    ${Sname}
+    ${logo}    EXCEL参数化设置    ${test[5]}    ${INDEX}
+    Set test Variable    ${功能图标}    ${logo}
+    ${code}    EXCEL参数化设置    ${test[6]}    ${INDEX}
+    Set test Variable    ${功能代码}    ${code}
+    Set test Variable    ${系统}    个贷
+
+新增XXLJOB管理
+    [Documentation]    姓名 证件类型 证件号码
+    log    设置新增贷款申请全局变量
+    ${test}    E_getXxlJobDetails
+    ${Executor}    EXCEL参数化设置    ${test[0]}    ${INDEX}
+    Set test Variable    ${执行器}    ${Executor}
+    ${description}    EXCEL参数化设置    ${test[1]}    ${INDEX}
+    Set test Variable    ${任务描述}    ${description}
+    ${route_strategy}    EXCEL参数化设置    ${test[2]}    ${INDEX}
+    Set test Variable    ${路由策略}    ${route_strategy}
+    ${cron1}    EXCEL参数化设置    ${test[3]}    ${INDEX}
+    Set test Variable    ${Cron}    ${cron1}
+    ${type}    EXCEL参数化设置    ${test[4]}    ${INDEX}
+    Set test Variable    ${运行模式}    ${type}
+    ${JobHandler1}    EXCEL参数化设置    ${test[5]}    ${INDEX}
+    Set test Variable    ${JobHandler}    ${JobHandler1}
+    ${block_strategy}    EXCEL参数化设置    ${test[6]}    ${INDEX}
+    Set test Variable    ${阻塞处理策略}    ${block_strategy}
+    ${failed_strategy}    EXCEL参数化设置    ${test[7]}    ${INDEX}
+    Set test Variable    ${失败处理策略}    ${failed_strategy}
+    ${Person}    EXCEL参数化设置    ${test[8]}    ${INDEX}
+    Set test Variable    ${负责人}    ${Person}

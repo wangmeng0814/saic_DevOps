@@ -1,0 +1,212 @@
+*** Settings ***
+Library           DateTime
+Library           Selenium2Library
+Library           Collections
+Library           OperatingSystem
+Resource          1_流程节点.txt
+Resource          6_数据库操作.txt
+Library           CustomLibrary
+
+*** Keywords ***
+等待
+    [Arguments]    ${timeout}=6
+    sleep    1    # 跳过一闪而逝的加载条
+    : FOR    ${i}    IN RANGE    ${timeout}
+    \    ${status}    Run Keyword And Ignore Error    Wait Until Element Is Not Visible    id=httpLoading    120
+    \    sleep    1
+    \    Exit For Loop If    "${status[0]}" == "PASS" and ${i} >=${timeout}/3
+    sleep    1
+
+执行当前节点操作
+    [Arguments]    ${终止节点}=已归档    ${timeout}=10
+    [Timeout]    6 days 22 hours 39 minutes
+    等待
+    关闭浏览器
+    log    执行当前节点操作了呀
+    ${currentNode}    DB_getApplyNode
+    Set Test Variable    ${当前节点名称}    ${currentNode}
+    log    我开始判断啦是否要终止 ${终止节点}
+    Continue For Loop If    '${currentNode}' == '${终止节点}'
+    log    判断结束啦是否要终止 ${终止节点}
+    Run Keyword If    '${currentNode}' == '最新创建'    新增菜单
+    Run Keyword If    '${currentNode}' == '自动审批'    自动审批
+    Run Keyword If    '${currentNode}' == '修改申请'    修改申请
+    Run Keyword If    '${currentNode}' == '信息核查'    信息核查
+    Run Keyword If    '${currentNode}' == '电话审核'    电话审核
+    Run Keyword If    '${currentNode}' == '等待补充资料'    等待补充资料
+    Run Keyword If    '${currentNode}' == '信贷建议'    信贷建议
+    Run Keyword If    '${currentNode}' == '审批监督'    审批监督
+    Run Keyword If    '${currentNode}' == '贷前文件准备'    贷前文件准备
+    Run Keyword If    '${currentNode}' == '贷前文件检查'    贷前文件检查
+    Run Keyword If    '${currentNode}' == '放贷复核'    放贷复核
+    Run Keyword If    '${currentNode}' == '放贷确认'    放贷确认
+    Run Keyword If    '${currentNode}' == '放款'    放款
+    Run Keyword If    '${currentNode}' == '扫描放款等待纸质文件'    扫描放款等待纸质文件
+    Run Keyword If    '${currentNode}' == '待交接贷前文档'    待交接贷前文档
+    Run Keyword If    '${currentNode}' == '合同归档'    合同归档
+    Run Keyword If    '${currentNode}' == '贷后信息待录入（经销商）'    贷后信息待录入（经销商）
+    Run Keyword If    '${currentNode}' == '贷后资料已寄出'    贷后资料已寄出
+    Run Keyword If    '${currentNode}' == '贷后文件检查'    贷后资料检查
+    Run Keyword If    '${currentNode}' == '贷后资料检查'    贷后资料检查_试乘试驾
+    Run Keyword If    '${currentNode}' == '产证归档'    产证归档
+    Run Keyword If    '${currentNode}' == '审贷主管岗二'    审贷主管岗二
+    Run Keyword If    '${currentNode}' == '审贷主管岗一'    审贷主管岗一
+    Run Keyword If    '${currentNode}' == '合同资料交接'    合同资料交接
+    Run Keyword If    '${currentNode}' == '已归档'    已归档
+    Comment    Pass Execution If    '${currentNode}' == '已归档'    啦啦啦啦都结束啦啦啦啦
+    等待
+    3_方法.执行当前节点操作    ${终止节点}
+    [Teardown]
+
+EXCEL参数化设置
+    [Arguments]    ${valueList}    ${selectNextValue1}=1
+    [Documentation]    数据分配规则
+    ...    {list}|{index}
+    log    我开始EXCEL参数化啦 \ and ${valueList} and ${selectNextValue1}
+    ${selectNextValue}    Evaluate    int(${selectNextValue1})
+    ${length1}    Get Length    ${valueList}
+    ${length}    Evaluate    int(${length1})
+    ${lastValue}    Evaluate    ${length}-1
+    log    1111111
+    ${index_variable}    Set Variable    ${lastValue}
+    log    222222
+    Run Keyword If    ${selectNextValue} < ${length}    Set test Variable    ${index_variable}    ${selectNextValue}
+    ...    ELSE    Set test Variable    ${index_variable}    ${lastValue}
+    log    ${index_variable}
+    ${testPar}    get from list    ${valueList}    ${index_variable}
+    ${parmeters}    Set Variable    ${testPar[1]}
+    [Return]    ${parmeters}
+
+Button容错
+    [Arguments]    ${button}
+    [Documentation]    偶发性BUTTON
+    等待
+    Comment    ${status}=    Run Keyword And Return Status    Element Should Be Visible    ${button}
+    ${status}=    Run Keyword And Return Status    Element Should Be Visible    //button[contains(.,"${button}")]
+    Run Keyword If    ${status}==True    Click Element    //button[contains(.,"${button}")]
+    Comment    log    啦啦啦，又发现一个BUG
+    等待
+    页面容错计数器
+
+按钮
+    [Arguments]    ${button_name}    ${label}=a    ${space}=N    ${notContains}=*    ${exit}=Y
+    [Documentation]    按键关键字名称|标签名称|是否有空格|不包含关键字名称|是否需要容错判断
+    等待
+    ${button_Y}    Catenate    //    ${label}    [contains(.,"${button_name} ") and contains(@class,"btn") and not (contains(.,"${notContains}"))]
+    ${button_N}    Catenate    //    ${label}    [contains(.,"${button_name}") and contains(@class,"btn") and not (contains(.,"${notContains}"))]
+    Run Keyword If    "${space}"=="Y"    Click Element    ${button_Y}
+    ...    ELSE    Click Element    ${button_N}
+    sleep    1
+    Run Keyword If    "${exit}"=="Y"    页面容错计数器
+
+置顶
+    [Arguments]    ${Top}=0
+    等待
+    Execute Javascript    document.documentElement.scrollTop= ${Top}
+
+根据文本正则表达式获取ApplyId
+    [Arguments]    ${key}=申请编号
+    ${applyIdTest}    Get text    //span[contains(.,"${key}")]
+    ${applyId}    Should Match Regexp    ${applyIdTest}    \\d+
+    ${ApplyId}    Set test Variable    ${applyId}
+    log    ${ApplyId}
+
+关闭浏览器
+    Close All Browsers
+    ${RunOutput}=    Run    taskkill /IM "chromedriver.exe" /T /F
+    log    ${RunOutput}=
+    Close All Browsers
+
+单选按钮
+    [Arguments]    ${key}    ${value}    ${notContains}=*
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Click Element    //vfs-dic-toggle-container[@label="${key}"]//vfs-dic-toggle//label[contains(.,"${value}") and not(contains(.,"${notContains}"))]
+    页面容错计数器
+
+单选按钮_高级版
+    [Arguments]    ${key}    ${value}    ${contains}    ${Ncontains}    ${notContains}=*
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Click Element    //div[contains(.,"${contains}") and not(contains(.,"${Ncontains}"))]//vfs-dic-toggle-container[@label="${key}"]//vfs-dic-toggle//label[contains(.,"${value}") and not(contains(.,"${notContains}"))]
+    页面容错计数器
+
+文本输入框
+    [Arguments]    ${key}    ${value}
+    [Documentation]    {key}|{value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input Text    //vfs-input[@label="${key}"]//input    ${value}
+
+多行文本输入框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input Text    //vfs-textarea[@label="${key}"]//textarea    ${value}
+
+日期输入框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input text    //vfs-datepicker-container[@label="${key}"]//input    ${value}
+
+金额输入框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input Text    //vfs-amount[@label="${key}"]//input    ${value}
+    页面容错计数器
+
+数字输入框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input Text    //vfs-number[@label="${key}"]//input    ${value}
+
+文本同级输入框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input Text    //label[contains(.,"${key}")]/following-sibling::label//input    ${value}
+    页面容错计数器
+
+根据文本选择下拉框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Select From List By Label    //vfs-dic-select-container[@label="${key}"]//select    ${value}
+    页面容错计数器
+
+根据文本选择下拉框_高级版
+    [Arguments]    ${key}    ${value}    ${contains}    ${Ncontains}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Select From List By Label    //div[contains(.,"${contains}") and not(contains(.,"${Ncontains}"))]//vfs-dic-select-container[@label="${key}"]//select    ${value}
+    页面容错计数器
+
+根据位置选择下拉框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Select From List By Index    //vfs-dic-select-container[@label="${key}"]//select    ${value}
+    页面容错计数器
+
+根据位置选择同级下拉框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Select From List By Index    //label[contains(.,"${key}")]/following-sibling::label//select    ${value}
+    页面容错计数器
+
+根据文本选择同级下拉框
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Select From List By Label    //label[contains(.,"${key}")]/following-sibling::label//select    ${value}
+    页面容错计数器
+
+根据位置选择同级下拉框_高级版本
+    [Arguments]    ${key}    ${value}    ${contains}    ${Ncontains}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Select From List By Index    //div[contains(.,"${contains}") and not(contains(.,"${Ncontains}"))]//label[contains(.,"${key}")]/following-sibling::label[@class="select"]//select    ${value}
+
+文本输入_股东信息
+    [Arguments]    ${key}    ${value}
+    ${status}    标签断言    ${key}
+    Run Keyword If    ${status}==True    Input Text    //div[contains(.,"股东信息") and not(contains(.,"法人信息"))]//vfs-input[@label="${key}"]//input    ${value}
+
+开始当前事务
+    [Arguments]    ${name}
+    db_start_transaction    ${name}
+
+结束当前事务
+    ${end_time}    Get Current Date
+    ${id}    db_get_Max_Id
+    db_end_transaction    ${id}    ${end_time}

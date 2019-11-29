@@ -1,0 +1,83 @@
+*** Settings ***
+Resource          3_方法.txt
+
+*** Keywords ***
+页面容错计数器
+    [Timeout]    6 days 22 hours 39 minutes
+    log    页面容错计数器
+    ${counter1}    Evaluate    ${counter}+1
+    #找到警告返回False
+    ${status0}    ERROR文本断言    //div[contains(.,"网络异常")]
+    Comment    ${status1}    ERROR文本断言    //div[contains(.,"用户名或密码错误")]
+    ${status2}    ERROR文本断言    //div[contains(.,"系统错误")]
+    ${status3}    ERROR文本断言    //div[contains(.,"无法访问此网站")]
+    ${status4}    ERROR文本断言    //div[contains(.,"请求超时，请稍后重试")]
+    Comment    ${status5}    ERROR文本断言    //div[contains(.,"账号已锁定")]
+    ${list}    Create List    ${status0}    ${status4}    ${status2}    ${status3}
+    log    ${list}
+    ${count}    Evaluate    ${list}.count(False)
+    Run Keyword If    ${count}>0    Run Keyword    Set Test Variable    ${status}    False
+    ...    ELSE    Set Test Variable    ${status}    True
+    Run Keyword If    ${counter} == 5 and ${status}==False    Run Keywords    截图
+    ...    AND    Continue For Loop
+    Run Keyword If    ${status}==False    Run Keywords    Set Test Variable    ${counter}    ${counter1}
+    ...    AND    sleep    120
+    ...    AND    3_方法.执行当前节点操作    ${终止节点}
+    ...    ELSE    log    一切恢复正常啦
+    log    页面容错计数器结束啦啦
+
+文本断言
+    [Arguments]    ${checkValue}    ${snapshot}=N
+    log    我开始判断是否存在关键字 ： ${checkValue}
+    ${status}=    Run Keyword And Return Status    Page Should Contain    ${checkValue}
+    Run Keyword If    ${status}!=True and '${snapshot}' == 'Y'    Take Screenshot Without Embedding    ${ApplyId}${checkValue}
+    [Return]    ${status}
+
+标签断言
+    [Arguments]    ${checkValue}
+    log    我开始判断是否存在关键字 ： ${checkValue}
+    ${status}=    Run Keyword And Return Status    Element Should Be Visible    //label[contains(.,"${checkValue}")]
+    [Return]    ${status}
+
+ERROR文本断言
+    [Arguments]    ${checkValue}    ${当前节点名称}=当前节点名称
+    log    我开始判断${当前节点名称}是否存在关键字 ： ${checkValue}
+    ${status}=    Run Keyword And Return Status    Element Should Not Be Visible    ${checkValue}
+    [Return]    ${status}
+
+断言文本并截图
+    [Arguments]    ${checkValue}    ${continue}=Y
+    [Documentation]    判断页面是否包含关键字，false截屏
+    log    我开始判断啦啦啦啦
+    等待
+    Screenshot.Set Screenshot Directory    \\ErrorSnapShot/EFS_AUTOTEST
+    ${status}=    文本断言    ${checkValue}
+    Run Keyword If    ${status}!=True    Take Screenshot Without Embedding    ${checkValue}
+    Run Keyword If    ${status}!=True and '${continue}' != 'Y'    Fail
+    log    判断结束啦啦啦啦啦
+
+List为空容错
+    [Arguments]    ${list}
+    LOG    判断LIST 是否为空
+    ${len}    Get Length    ${list}
+    Run Keyword If    ${len} < 1    Run Keywords    sleep    30
+    ...    AND    log    List为空
+    Run Keyword If    ${len} < 1    Run Keyword    3_方法.执行当前节点操作    ${终止节点}
+
+判断当前节点是否已经执行完成
+    [Arguments]    ${RANGE}=10
+    [Timeout]    6 days 22 hours 39 minutes
+    log    判断当前节点是否执行完成
+    : FOR    ${i}    IN RANGE    ${RANGE}
+    \    ${status}    DB_getApplyNode
+    \    Run Keyword If    "${status}"!="${当前节点名称}" and "${status}"!='N'    Exit for loop
+    \    log    ${当前节点名称}进行中
+    \    sleep    120
+    log    当前节点已执行完成
+
+截图
+    log    我开始截图啦啦啦啦
+    Screenshot.Set Screenshot Directory    \\ErrorSnapShot/EFS_AUTOTEST
+    Take Screenshot Without Embedding    ${ApplyId}
+    log    截图结束啦啦啦啦啦
+    Create Dictionary

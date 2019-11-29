@@ -1,0 +1,46 @@
+*** Settings ***
+Library           requests
+Library           json
+Library           Collections
+Library           RequestsLibrary
+Resource          Interface.txt
+
+*** Keywords ***
+interface 1
+    ${r}    requests.Post    http://10.116.58.42:32033/postloan/v1/swagger-ui.html#/Monitor/helloUsingPOST
+    log    ${r}
+
+I_getProductRepayplan 0
+    [Documentation]    https://efssit.saic-finance.com/prodmng/v1/getProductRepayplan
+    ...    {invest: 100000, productId: "12379"}
+    ${headers}    Create Dictionary    Host=https://10.116.15.15    X-Auth=d2f145148908e260a8641bad3cdfcd30    Content-Type=application/json
+    ${body}    Create Dictionary    invest=100000    productId=12379
+    ${uri}    Set Variable    /prodmng/v1/getProductRepayplan
+    Create Session    api    https://10.116.15.15    ${headers}
+    ${response}    Post Request    alias=api    uri=${uri}    data=${body}    headers=${headers}
+    ${j}    To Json    ${response.content}
+    log    ${j}
+
+I_getAuth
+    ${account}    Evaluate    "superadmin"
+    ${password}    Evaluate    "vfs2"
+    ${body}    Create Dictionary    account=${account}    password=${password}
+    ${url}    Set Variable    https://efsdev.saic-finance.com/uas/v1/user/login
+    ${r}    requests.Post    ${url}    json=${body}
+    ${json}    To Json    ${r.content}
+    log    ${json}
+    ${data}    Get From Dictionary    ${json}    data
+    log    ${data}
+    ${token}    Get From Dictionary    ${data}    token
+    log    ${token}
+    [Return]    ${token}
+
+I_getProductRepayplan
+    [Arguments]    ${product_id}    ${loan_amount}
+    Import Library    D:/AutomationTest/Robot/Src/robot/interface/BeforeLoanInterface.py
+    ${dic}    getProductRepayplan    ${loan_amount}    ${product_id}
+
+I_testProduct
+    [Arguments]    ${product_id}    ${loan_amount}
+    Import Library    D:/AutomationTest/Robot/Src/robot/interface/BeforeLoanInterface.py
+    ${r}    testProduct    ${product_id}     ${loan_amount}

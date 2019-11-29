@@ -1,0 +1,208 @@
+*** Settings ***
+Library           DatabaseLibrary
+Library           Collections
+Resource          7_断言.txt
+
+*** Keywords ***
+DB_getApplyNode
+    [Documentation]    获取当前节点名称
+    log    我开始获取当前节点名称啦啦啦！！
+    Sleep    10
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select (select APPLYER_NAME from EFS.RT_APPLYINFO where APPLY_ID = a.APPLY_ID) as applyer_name, (SELECT NAME from EFS.SYS_WORKFLOW_NODE WHERE ID =a.NODE_ID) AS node_name, \ a.WORKFLOW_ID from EFS.WORKFLOW_ASSIGNMENT a where STATE = 'started' and apply_id =    ${ApplyId}
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${node_name}    Evaluate    '${list[0][1]}'.decode('utf-8')
+    log    ${node_name}
+    Disconnect From Database
+    log    获取当前节点名称结束啦啦啦！！
+    [Return]    ${node_name}
+
+DB_getTestDrive
+    log    我开始获取当前试乘试驾申请号名称啦啦啦！！
+    Sleep    2
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select * from (select APPLY_ID from EFs.RT_APPLYINFO where LOAN_TYPE = 'SpTestDrive' \ \ and APPLY_STATUS = 'lap_NewCreate' order by MODIFIED_TIME desc) where rownum = 1 \
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${TestDrive_ApplyId}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${TestDrive_ApplyId}
+    Disconnect From Database
+    log    获取当前试乘试驾申请号结束啦啦啦！！
+    [Return]    ${TestDrive_ApplyId}
+
+DB_getApplyProcessorName
+    [Arguments]    ${applyid}
+    [Documentation]    \#查出apply的工作流当前操作者的username
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    SELECT C.ACCOUNT FROM EFS.SYS_WORKFLOW_NODE A, EFS.WORKFLOW_ASSIGNMENT B, EFS.SYS_USER C WHERE \ C.USER_ID=B.USER_ID AND B.NODE_ID=A.ID AND B.APPLY_ID in (    ${applyid}    ) and state='started' ORDER BY B.CREATED_TIME DESC
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${userName}    set variable    ${list[0][0]}
+    log    ${userName}
+    Disconnect From Database
+    [Return]    ${userName}
+
+DB_getLoanOrg
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select LOAN_ORG from EFS.RT_APPLYINFO WHERE APPLY_ID =    ${ApplyId}
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    set test variable    ${loanOrg}    saicfc
+    Run Keyword If    "${list[0][0]}" == "anji"    set test variable    ${loanOrg}    anji
+    log    ${loanOrg}
+    Disconnect From Database
+    [Return]    ${loanOrg}
+
+DB_getAuditResult
+    [Arguments]    ${applyId}
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    SEPARATOR=    select AUDIT_result from (select * from efs.rt_autoaudit_data where apply_id =    ${ApplyId}    order by seq_id desc ) where rownum=1
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${len}    Get Length    ${list}
+    ${AutoResult}    Run Keyword If    ${len}==0    Set Variable    N
+    ...    ELSE IF    '${list[0][0]}'=='None'    Set Variable    N
+    ...    ELSE    set variable    ${list[0][0]}
+    Disconnect From Database
+    [Return]    ${AutoResult}
+
+DB_getUnsecured_Guarantee
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    SEPARATOR=    select UNSECURED_GUARANTEE from EFS.RT_APPLYCONTRACT where APPLY_ID =    ${ApplyId}
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${len}    Get Length    ${list}
+    ${UNSECURED_GUARANTEE}    Run Keyword If    ${len}==0    Set Variable    N
+    ...    ELSE IF    '${list[0][0]}'=='None'    Set Variable    N
+    ...    ELSE    set variable    Y
+    Disconnect From Database
+    [Return]    ${UNSECURED_GUARANTEE}
+
+DB_getUserId
+    log    开始获取userId
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select USER_ID from EFS.SYS_USER where ACCOUNT = (SELECT C.ACCOUNT FROM EFS.SYS_WORKFLOW_NODE A,EFS.WORKFLOW_ASSIGNMENT B,EFS.SYS_USER C WHERE C.USER_ID = B.USER_ID AND B.NODE_ID = A.ID and state = 'started' AND B.APPLY_ID = ${ApplyId})
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${userId}    set variable    ${list[0][0]}
+    log    ${userId}
+    Disconnect From Database
+    [Return]    ${userId}
+
+DB_changeREAD
+    [Arguments]    ${applyid}
+    [Documentation]    修改内部人员标记已读信息
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    UPDATE EFS.RT_APPLYREMINDER SET IS_READ = 'Y' WHERE READER_POSITION = 'Internal'and apply_id =    ${applyid}
+    Execute Sql String    ${sql}
+    Disconnect From Database
+
+DB_checkFailedAudit
+    [Documentation]    检查自动审批是否失败，需要转人工否
+    Sleep    10
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select count(*) from EFS.task_progress where STATUS = 'failed' and BUS_ID =    ${ApplyId}
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${failedCount}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${failedCount}
+    Disconnect From Database
+    [Return]    ${failedCount}
+
+DB_getSpouse_Guarantee_Count
+    Sleep    1
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select (select COUNT(*) from EFS.RT_CHKRULE where RULE_ID = (SELECT RULE_ID FROM EFS.RT_APPLYINFO where SPOURSE_NAME is not null and APPLY_ID = ${ApplyId}) AND SPOUSE_CHK ='Y')+(select COUNT(*) from EFS.RT_APPLYGUARANTEE where APPLY_ID = ${ApplyId})    + (select count(*)from efs.RT_APPLYINFO where SHARE_BORROWER_ID is not null and APPLY_ID = ${ApplyId} and LOAN_TYPE = 'GHD') from dual
+    ${list}    query    ${sql}
+    ${len}    Get Length    ${list}
+    List为空容错    ${list}
+    ${count}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${count}
+    Disconnect From Database
+    [Return]    ${count}
+
+DB_getIncreaseLoan
+    Sleep    2
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    select IS_INCREASE_LOAN from EFS.RT_APPLYINFO where APPLY_ID =    ${ApplyId}
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${IS_INCREASE_LOAN}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${IS_INCREASE_LOAN}
+    Disconnect From Database
+    [Return]    ${IS_INCREASE_LOAN}
+
+DB_getLoanType
+    Sleep    2
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    SELECT LOAN_TYPE FROM EFS.RT_APPLYINFO where APPLY_ID =    ${ApplyId}
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${LOAN_TYPE}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${LOAN_TYPE}
+    Disconnect From Database
+    [Return]    ${LOAN_TYPE}
+
+DB_TestMongo
+    Connect To Mongodb    10.116.6.171    27017
+    @{alldbs}    Get Mongodb Databases
+    Comment    ${allResult_insert}    Save Mongodb Records    EFS_AUTO    efs_person    {"test":"test"}
+    Comment    Disconnect From Mongodb
+    Connect To Database Using Custom Params
+
+DB_changePassword
+    [Arguments]    ${username}
+    [Documentation]    当前用户名的密码改成vfs2
+    log    我开始修改密码称啦啦啦！！
+    Sleep    10
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    UPDATE EFS.SYS_USER SET PWD_ENCRYPT_WAY = 'SALT' ,SALT = 'Mu/svd/CTDgTQaW6Yo4v2g==' , LOGIN_PASSWORD = '145d7e531b44becdb6fb6cf34b515875' WHERE \ ACCOUNT =    '${username}'
+    Execute Sql String    ${sql}
+    Disconnect From Database
+
+DB_UNLOCK
+    [Arguments]    ${username}
+    log    我开始解锁啦啦啦！！
+    Sleep    10
+    Connect To Database Using Custom Params    cx_Oracle    'etl','Test123#','${db_connect}'
+    ${sql}    Catenate    UPDATE EFS.SYS_USER_AUX \ SET IS_LOCK \ = 'N' \ , LOCK_ENABLED ='N' \ \ where USER_ID = (select USER_ID from EFS.SYS_USER where ACCOUNT = '${username}')
+    Execute Sql String    ${sql}
+    Disconnect From Database
+
+DB_Mysql
+    Connect To Database Using Custom Params    pymysql    database='sit',user='testteam',password='1qaz@WSX',host='10.116.50.75',port=3306
+    ${sql}    Catenate    select * from sit.autotest
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${failedCount}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${failedCount}
+    Disconnect From Database
+
+db_get_Max_Id
+    log    开始事务啦啦啦
+    Connect To Database Using Custom Params    pymysql    database='sit',user='testteam',password='1qaz@WSX',host='10.116.50.75',port=3306
+    ${sql}    Catenate    select max(id) \ from sit.autotest
+    ${list}    query    ${sql}
+    List为空容错    ${list}
+    ${id}    Evaluate    '${list[0][0]}'.decode('utf-8')
+    log    ${id}
+    Disconnect From Database
+    [Return]    ${id}
+
+db_start_transaction
+    [Arguments]    ${trans_name}
+    log    开始事务啦啦啦
+    Connect To Database Using Custom Params    pymysql    database='sit',user='testteam',password='1qaz@WSX',host='10.116.50.75',port=3306
+    ${sql}    Catenate    INSERT INTO sit.autotest (`applyId`, `node_name`, `transaction_name`, `start_time`, `end_time`) VALUES ('${applyId}', '${当前节点名称}','${trans_name}', DEFAULT, null)
+    Execute Sql String    ${sql}
+    Disconnect From Database
+
+db_end_transaction
+    [Arguments]    ${id}    ${end_time}
+    log    结束事务啦啦啦
+    Connect To Database Using Custom Params    pymysql    database='sit',user='testteam',password='1qaz@WSX',host='10.116.50.75',port=3306
+    ${sql}    Catenate    UPDATE sit.autotest \ SET end_time = '${end_time}' WHERE id = ${id}
+    Execute Sql String    ${sql}
+    Execute Sql String    update sit.autotest set \ duration_time = end_time-start_time where 1 =1
+    Disconnect From Database

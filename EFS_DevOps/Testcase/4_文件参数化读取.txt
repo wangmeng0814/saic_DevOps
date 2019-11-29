@@ -1,0 +1,64 @@
+*** Settings ***
+Library           DatabaseLibrary
+Library           ExcelLibrary
+Library           DateTime
+
+*** Keywords ***
+E_getDefaultDetails
+    [Documentation]    初始设置
+    Open Excel    ${file}
+    ${EFS_URL}    Get Column Values    default    0
+    ${EFS_USER}    Get Column Values    default    1
+    ${EFS_PASSWORD}    Get Column Values    default    2
+    ${Apollo_URL}    Get Column Values    default    3
+    ${Apollo_USER}    Get Column Values    default    4
+    ${Apollo_PASSWORD}    Get Column Values    default    5
+    ${XXLJOB_URL}    Get Column Values    default    6
+    ${XXLJOB_USER}    Get Column Values    default    7
+    ${XXLJOB_PASSWORD}    Get Column Values    default    8
+    ${DAOCLOUD_URL}    Get Column Values    default    9
+    ${DAOCLOUD_USER}    Get Column Values    default    10
+    ${DAOCLOUD_PASSWORD}    Get Column Values    default    11
+    [Return]    ${EFS_URL}    ${EFS_USER}    ${EFS_PASSWORD}    ${Apollo_URL}    ${Apollo_USER}    ${Apollo_PASSWORD}
+    ...    ${XXLJOB_URL}    ${XXLJOB_USER}    ${XXLJOB_PASSWORD}    ${DAOCLOUD_URL}    ${DAOCLOUD_USER}    ${DAOCLOUD_PASSWORD}
+
+E_getMenuDetails
+    [Documentation]    初始设置
+    Open Excel    ${file}
+    ${name}    Get Column Values    菜单    1
+    ${type}    Get Column Values    菜单    2
+    ${URL}    Get Column Values    菜单    3
+    ${Hmenu}    Get Column Values    菜单    4
+    ${Sname}    Get Column Values    菜单    5
+    ${logo}    Get Column Values    菜单    6
+    ${code}    Get Column Values    菜单    7
+    [Return]    ${name}    ${type}    ${URL}    ${Hmenu}    ${Sname}    ${logo}
+    ...    ${code}
+
+E_getApolloDetails
+    [Documentation]    新增个人贷款申请
+    ...    姓名
+    ...    证件类型
+    ...    证件号码
+    Open Excel    ${file}
+    Comment    新增贷款申请
+    ${name}    Get Column Values    Apollo    0
+    ${certType}    Get Column Values    Apollo    1
+    ${certNo}    Get Column Values    Apollo    2
+    ${loanType}    Get Column Values    Apollo    3
+    [Return]    ${name}    ${certType}    ${certNo}    ${loanType}
+
+E_getXxlJobDetails
+    [Documentation]    初始设置
+    Open Excel    ${file}
+    ${Executor}    Get Column Values    XXLJOB    2
+    ${description}    Get Column Values    XXLJOB    3
+    ${route_strategy}    Get Column Values    XXLJOB    4
+    ${cron}    Get Column Values    XXLJOB    5
+    ${type}    Get Column Values    XXLJOB    7
+    ${JobHandler}    Get Column Values    XXLJOB    8
+    ${block_strategy}    Get Column Values    XXLJOB    9
+    ${failed_strategy}    Get Column Values    XXLJOB    10
+    ${Person }    Get Column Values    XXLJOB    11
+    [Return]    ${Executor}    ${description}    ${route_strategy}    ${cron}    ${type}    ${JobHandler}
+    ...    ${block_strategy}    ${failed_strategy}    ${Person }
