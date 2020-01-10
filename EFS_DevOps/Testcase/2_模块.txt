@@ -70,3 +70,21 @@ Library           RequestsLibrary
     Click Element    //aside[@id="left-panel"]//span[contains(.,"${menua_2}")]
     等待
     页面容错计数器
+
+登录DAOCLOUD
+    Open Browser    ${DAOCLOUD_环境}    chrome
+    Maximize Browser Window
+    Input Text    //*[@id="login"]/div[2]/div[2]/div/div/div[1]/div/div/div/div[1]/input    ${DAOCLOUD_用户}
+    Input Text    //*[@id="login"]/div[2]/div[2]/div/div/div[2]/label/div/div/div/div[1]/input    ${DAOCLOUD_密码}
+    Click Element    //*[@id="login"]/div[2]/div[2]/div/div/button
+    等待
+
+登录XXLJOB
+    Open Browser    ${XXLJOB_环境}    chrome
+    Maximize Browser Window
+    Input Text    //*[@id="loginForm"]/div/div[1]/input    ${XXLJOB_用户}
+    Input Text    //*[@id="loginForm"]/div/div[2]/input    ${XXLJOB_密码}
+    Click Element    //*[@id="loginForm"]/div/div[3]/div[2]/button
+    Wait Until Element Is Visible    //html/body/div[2]/aside/section/ul/li[2]/a/span    20
+    Click Element    //html/body/div[2]/aside/section/ul/li[2]/a/span
+    等待
