@@ -9,14 +9,14 @@ Resource          5_全局参数化设置.txt
 *** Test Cases ***
 新增菜单
     Run    taskkill /IM "chromedriver.exe" /T /F
-    Set Test Variable    ${file}    \\project\\saic_DevOps\\saic_DevOps_data\\devOps.xls
+    Set Test Variable    ${file}    \\project\\AutoTestScript\\saic_DevOps\\saic_DevOps_data\\devOps.xls
     环境用户名密码管理
     Set Test Variable    ${counter}    0
     打开浏览器
     登录
     选择主菜单    用户权限
     选择子菜单    权限新增和编辑
-    : FOR    ${INDEX1}    IN RANGE    1    2
+    : FOR    ${INDEX1}    IN RANGE    1    6
     \    Set Test Variable    ${INDEX}    ${INDEX1}
     \    新增菜单管理
     \    新增菜单
